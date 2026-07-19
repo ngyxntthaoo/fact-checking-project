@@ -19,6 +19,7 @@ Hyperparams from paper:
 """
 
 import os
+import argparse
 import random
 import pickle
 import numpy as np
@@ -94,11 +95,23 @@ def get_optimizer(model: nn.Module, lr: float, weight_decay: float = 1e-4):
 
 
 # ── Config ───────────────────────────────────────────────────────────────────
-PLM_PATH = 'roberta-large'          # or 'ynie/roberta-large-snli_mnli_fever_anli_R1_R2_R3-nli'
-TRAIN_PATH = '/Users/thnhthao/Master 2025/Thesis/fact-checking-project/KernelGAT/data/KernelGAT/data/all_train.json'
-DEV_PATH = '/Users/thnhthao/Master 2025/Thesis/fact-checking-project/KernelGAT/data/KernelGAT/data/all_dev.json'
-CONCEPT_CACHE = '/Users/thnhthao/Master 2025/Thesis/fact-checking-project/HeterFC/concept-hgn/concept_cache.pkl'
-CHECKPOINT_DIR = '/Users/thnhthao/Master 2025/Thesis/fact-checking-project/HeterFC/concept-hgn/checkpoint'
+# All paths can be overridden via environment variables so the script works
+# identically on local machines and on vast.ai without editing source code.
+#
+# On vast.ai, set these in the container env or export before running:
+#   export DATA_DIR=/workspace/data
+#   export CONCEPT_CACHE=/workspace/concept_cache.pkl
+#   export CHECKPOINT_DIR=/workspace/checkpoints
+
+_HERE = os.path.dirname(os.path.abspath(__file__))          # .../HeterFC/concept-hgn
+_REPO = os.path.abspath(os.path.join(_HERE, '..', '..'))    # .../fact-checking-project
+_DEFAULT_DATA = os.path.join(_REPO, 'KernelGAT', 'data', 'KernelGAT', 'data')
+
+PLM_PATH      = os.environ.get('PLM_PATH',        'roberta-large')
+TRAIN_PATH    = os.environ.get('TRAIN_PATH',      os.path.join(_DEFAULT_DATA, 'all_train.json'))
+DEV_PATH      = os.environ.get('DEV_PATH',        os.path.join(_DEFAULT_DATA, 'all_dev.json'))
+CONCEPT_CACHE = os.environ.get('CONCEPT_CACHE',   os.path.join(_HERE, 'concept_cache.pkl'))
+CHECKPOINT_DIR = os.environ.get('CHECKPOINT_DIR', os.path.join(_HERE, 'checkpoint'))
 MODEL_SAVE_PATH = os.path.join(CHECKPOINT_DIR, 'concept_hgn_fever.pt')
 
 LABEL_MAP_FEVER = {'SUPPORTS': 1, 'REFUTES': 2, 'NOT ENOUGH INFO': 0}
@@ -117,12 +130,14 @@ GNN_LAYERS = 2
 NUM_RELATIONS = 4
 CES_ALPHA = 0.8             # FEVER threshold
 CES_TOP_K = 10
-EVALUATION_STEPS = 5000   # increased: CPU eval of 20k samples takes ~5hrs, evaluate less often
+EVALUATION_STEPS = 500     # evaluate every 500 steps on GPU
 LOGGING_STEPS = 100
-# Set SMOKE_TEST=True to run on 200 train / 100 dev samples for quick iteration on CPU
-SMOKE_TEST = True
+# SMOKE_TEST: quick sanity-check on 200/100 samples.
+# Override via:  SMOKE_TEST=0 python train_fever.py
+#            or: python train_fever.py --smoke
+SMOKE_TEST  = bool(int(os.environ.get('SMOKE_TEST', '1')))  # default ON locally
 SMOKE_TRAIN = 200
-SMOKE_DEV = 100
+SMOKE_DEV   = 100
 # ─────────────────────────────────────────────────────────────────────────────
 
 
@@ -160,6 +175,19 @@ def evaluate(model, dataloader, concept_data_list, device, split='dev'):
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--smoke', action='store_true',
+                        help='Run smoke test on 200/100 samples (overrides SMOKE_TEST env var)')
+    parser.add_argument('--no-smoke', action='store_true',
+                        help='Disable smoke test — run full training (overrides SMOKE_TEST env var)')
+    args = parser.parse_args()
+
+    global SMOKE_TEST
+    if args.smoke:
+        SMOKE_TEST = True
+    elif args.no_smoke:
+        SMOKE_TEST = False
+
     setup_seed(42)
     os.makedirs(CHECKPOINT_DIR, exist_ok=True)
     os.makedirs('preprocessed', exist_ok=True)
