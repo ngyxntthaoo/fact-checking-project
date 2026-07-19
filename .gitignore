@@ -1,0 +1,76 @@
+# ── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+# ── Virtual environments ──────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+.env
+# ── Jupyter ───────────────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb
+# ── Datasets (large raw data — keep out of git, upload separately to vast.ai) ─
+# KernelGAT data
+KernelGAT/data/
+KernelGAT/checkpoint/
+KernelGAT/bert_base/
+KernelGAT/pretrain/
+KernelGAT/retrieval_model/
+# HeterFC database / raw data
+HeterFC/database/
+# Any raw FEVER / FEVEROUS data files anywhere in the project
+*.jsonl
+*.tsv
+*.csv
+# Exception: keep small config/sample JSON files if needed
+# (comment out the next line if you want to track small JSON files)
+*.json
+# ── Preprocessed caches (regenerated automatically on first run) ──────────────
+preprocessed/
+**/preprocessed/
+*.pkl
+# ── Model checkpoints & saved weights ────────────────────────────────────────
+checkpoint/
+**/checkpoint/
+*.pt
+*.pth
+*.bin
+*.safetensors
+*.ckpt
+*.h5
+# ── Training / experiment logs ────────────────────────────────────────────────
+logs/
+**/logs/
+runs/
+wandb/
+*.log
+*.out
+*.err
+tensorboard/
+# ── OS & editor ───────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+# ── Secrets / credentials (NEVER commit these) ───────────────────────────────
+.env
+*.env
+secrets.yaml
+secrets.json
+hf_token.txt
